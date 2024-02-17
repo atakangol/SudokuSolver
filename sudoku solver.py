@@ -3,10 +3,10 @@ import numpy as np
 from sudoku import Sudoku
 
 def sudokuCheck(grid):    
-    if not grid:
+    if not grid or any(0 in row for row in grid):
         return False
     
-    #rows by rows checking 
+    # Rows by rows checking 
     hset = set()
     for i in range(9):
         for j in range(9):
@@ -16,7 +16,7 @@ def sudokuCheck(grid):
                 hset.add(grid[i][j])
         hset = set()
             
-    #cols by cols checking
+    # Columns by columns checking
     hset = set()
     for i in range(9):
         for j in range(9):
@@ -26,8 +26,7 @@ def sudokuCheck(grid):
                 hset.add(grid[j][i])
         hset = set()
     
-    
-    #3 by 3 check    
+    # 3 by 3 check    
     subs = [range(0,3), range(3,6), range(6,9)]    
     subgrids = [] 
     for x in subs:
@@ -44,7 +43,6 @@ def sudokuCheck(grid):
                     hset.add(grid[i][j])
     
     return True
-
 
 def find_easy(grid):
     found = False
@@ -66,29 +64,29 @@ def find_easy(grid):
                 #check 0s in row
                 if pd.Series(grid[row_i]).value_counts()[0] == 1:
                     x = set(range(1,10))-set(grid[row_i])
-                    grid[row_i][col_i]=list(x)[0]
-                    print("found",row_i,col_i,list(x)[0])
+                    #grid[row_i][col_i]=list(x)[0]
+                    #print("found",row_i,col_i,list(x)[0])
                     found=True
-                    continue
+                    return row_i,col_i,list(x)[0]
                 
                 
                 #check 0s in col
                 elif pd.Series(column).value_counts()[0] == 1:
                     x = set(range(1,10))-set(column)
-                    grid[row_i][col_i]=list(x)[0]
-                    print("found",row_i,col_i,list(x)[0])
+                    #grid[row_i][col_i]=list(x)[0]
+                    #print("found",row_i,col_i,list(x)[0])
                     found=True
-                    continue
+                    return row_i,col_i,list(x)[0]
                 
                 #check 0s in subgrid
                 elif pd.Series(flat_sub_grid).value_counts()[0] == 1:
                     x = set(range(1,10))-set(flat_sub_grid)
-                    grid[row_i][col_i]=list(x)[0]
-                    print("found",row_i,col_i,list(x)[0])
+                    #grid[row_i][col_i]=list(x)[0]
+                    #print("found",row_i,col_i,list(x)[0])
                     found=True
-                    continue
+                    return row_i,col_i,list(x)[0]
                 
-    return found
+    return None
 #grid[row_i][col_i]                    
 def find_only_possible_space(grid):  
     goal = set(range(1,10))
@@ -118,10 +116,10 @@ def find_only_possible_space(grid):
                     possibles.append(ii)
             
             if len(possibles) == 1:
-                grid[row_i][col_i]=possibles[0]
-                print("found0",row_i,col_i,possibles[0])
+                #grid[row_i][col_i]=possibles[0]
+                #print("found0",row_i,col_i,possibles[0])
                 found=True
-                return found
+                return (row_i,col_i,possibles[0])
              
     
        
@@ -150,10 +148,10 @@ def find_only_possible_space(grid):
                     possibles.append(ii)
             
             if len(possibles) == 1:
-                grid[row_i][col_i]=possibles[0]
-                print("found1",row_i,col_i,possibles[0])
+                #grid[row_i][col_i]=possibles[0]
+                #print("found1",row_i,col_i,possibles[0])
                 found=True
-                return found
+                return (row_i,col_i,possibles[0])
             
             
     for ii,kk in np.ndindex((3,2)):
@@ -186,40 +184,208 @@ def find_only_possible_space(grid):
                         possibles.append(jj)
                 
                 if len(possibles) == 1:
-                    grid[row_i][col_i]=possibles[0]
-                    print("found2",row_i,col_i,possibles[0])
+                    #grid[row_i][col_i]=possibles[0]
+                    #print("found2",row_i,col_i,possibles[0])
                     found=True
-                    return found
+                    return (row_i,col_i,possibles[0])
                  
               
-    return False    
-        
-        
+    return None    
         
 
 
-puzzle = Sudoku(3).difficulty(0.6)
+
+def find_possibilities(grid, row, col):
+    possibilities = set(range(1, 10))  # All numbers from 1 to 9 are initially possible
+
+    # Check the numbers in the same row and column
+    for i in range(9):
+        if grid[row][i] in possibilities:
+            possibilities.remove(grid[row][i])
+        if grid[i][col] in possibilities:
+            possibilities.remove(grid[i][col])
+
+    # Check the numbers in the 3x3 square
+    start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+    for i in range(start_row, start_row + 3):
+        for j in range(start_col, start_col + 3):
+            if grid[i][j] in possibilities:
+                possibilities.remove(grid[i][j])
+
+    return list(possibilities)
+
+def find_least_possibilities(grid):
+  least_possibilities = float('inf')  # Start with positive infinity
+  best_candidate = None
+
+  for i in range(9):
+      for j in range(9):
+          if grid[i][j] == 0:
+              possibilities = find_possibilities(grid, i, j)
+              num_possibilities = len(possibilities)
+
+              if num_possibilities < least_possibilities:
+                  least_possibilities = num_possibilities
+                  best_candidate = (i, j, possibilities)
+
+  return best_candidate      
+
+def find_all_ordered_by_possibilities(grid):
+    empty_spaces = []
+
+    for i in range(9):
+        for j in range(9):
+            if grid[i][j] == 0:
+                possibilities = find_possibilities(grid, i, j)
+                empty_spaces.append((i, j, possibilities))
+
+    # Sort the empty spaces based on the number of possibilities
+    empty_spaces.sort(key=lambda x: len(x[2]))
+
+    return empty_spaces
+
+
+
+def backtrack(all_moves,grid):
+    back = all_moves.pop()
+    #print(back)
+    while True:
+        if back[0] == 'm':
+            #print(back)
+            back_move = back[1]
+            grid[back_move[0]][back_move[1]] = 0
+            
+            back = all_moves.pop()
+            continue
+        if back[0] == 'c':
+            #print(back)
+            back_move = back[1]
+            try:
+                
+                m = back_move[0][2].pop()
+            except:
+                back_move.pop(0)
+                m = back_move[0][2].pop()
+            
+            #print(back_move)
+            grid[back_move[0][0]][ back_move[0][1]]  = m
+            
+            all_moves.append(back_move)
+            
+            return 
+
+
+
+#back_move=[(5, 6, []), (5, 8, [1, 9]), (8, 6, [1, 9]), (8, 8, [1, 9])]
+
+
+puzzle = Sudoku(3).difficulty(0.9)
 orig_grid = [[0 if element is None else element for element in row] for row in puzzle.board]
 
 
+sum(row.count(0) for row in orig_grid)
 
-sudokuCheck(orig_grid)
-
-while True:
-    if not find_easy(orig_grid):
+all_moves = []
+ii=0
+while not sudokuCheck(orig_grid) :
+    print(ii,sum(row.count(0) for row in orig_grid))
+    if sum(row.count(0) for row in orig_grid) == 0:
         break
+    ii+=1
+    
+    move = find_easy(orig_grid)
+    if move :
+        orig_grid[move[0]][move[1]] = move[2]
+    
+        all_moves.append(('m',move))
+        
+        move=None
+        continue
+    
+    move = find_only_possible_space(orig_grid)
+    
+    if move :
+        orig_grid[move[0]][move[1]] = move[2]
+    
+        all_moves.append(('m',move))
+        
+        move=None
+        continue
+    
+    
+    #move = find_least_possibilities(orig_grid)
+    
+    
+    moves = find_all_ordered_by_possibilities(orig_grid)
+    
+    if moves:
+        #move = moves[0]
+        while len(moves[0][2]) ==0:
+            moves.pop(0)
+        
+        
+        m =  moves[0][2].pop()
+        
+        
+        
+        
+        orig_grid[moves[0][0]][moves[0][1]] = m
+        
+        all_moves.append(('c',moves))
+        move=None
+        moves = None
+        continue
+   
+    #break
+    #backtrack
+    backtrack(all_moves,orig_grid)
+    
+print(sudokuCheck(orig_grid))   
 
-    #print(orig_grid)
-print(orig_grid)
+print("done")
 
-sudokuCheck(orig_grid)
 
-while True:
-    if not find_only_possible_space(orig_grid):
-        break
 
-    #print(orig_grid)
-#print(orig_grid)
 
-sudokuCheck(orig_grid)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+
+
 
