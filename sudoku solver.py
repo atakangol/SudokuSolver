@@ -237,49 +237,58 @@ def find_all_ordered_by_possibilities(grid):
         for j in range(9):
             if grid[i][j] == 0:
                 possibilities = find_possibilities(grid, i, j)
-                empty_spaces.append((i, j, possibilities))
+                for possibility in possibilities:
+                    empty_spaces.append((i, j, possibility))
 
     # Sort the empty spaces based on the number of possibilities
-    empty_spaces.sort(key=lambda x: len(x[2]))
+    empty_spaces.sort(key=lambda x: len(find_possibilities(grid, x[0], x[1])))
 
     return empty_spaces
+#find_all_ordered_by_possibilities(orig_grid)
 
 
 
 def backtrack(all_moves,grid):
     back = all_moves.pop()
-    #print(back)
+    last_move = back[1]
+    ty = back[0]
+    
     while True:
-        if back[0] == 'm':
-            #print(back)
-            back_move = back[1]
-            grid[back_move[0]][back_move[1]] = 0
-            
+        if ty=='m':
+            orig_grid[last_move[0]][last_move[1]] = 0
             back = all_moves.pop()
+            last_move = back[1]
+            ty = back[0]
             continue
-        if back[0] == 'c':
-            #print(back)
-            back_move = back[1]
-            try:
-                
-                m = back_move[0][2].pop()
-            except:
-                back_move.pop(0)
-                m = back_move[0][2].pop()
+        if ty=='c':
             
-            #print(back_move)
-            grid[back_move[0][0]][ back_move[0][1]]  = m
+            last_choice = last_move.pop(0)
+            orig_grid[last_choice[0]][last_choice[1]] = 0
             
-            all_moves.append(back_move)
+            if len(last_move)==0:
+                back = all_moves.pop()
+                last_move = back[1]
+                ty = back[0]
+                continue
             
-            return 
+            new_move = last_move[0]
+            
+            
+            orig_grid[new_move[0]][new_move[1]] = new_move[2]
+            
+            all_moves.append(('c',last_move))
+            
+            break
+            
+            
+    
 
 
 
 #back_move=[(5, 6, []), (5, 8, [1, 9]), (8, 6, [1, 9]), (8, 8, [1, 9])]
 
 
-puzzle = Sudoku(3).difficulty(0.9)
+puzzle = Sudoku(3).difficulty(0.8)
 orig_grid = [[0 if element is None else element for element in row] for row in puzzle.board]
 
 
@@ -290,7 +299,9 @@ ii=0
 while not sudokuCheck(orig_grid) :
     print(ii,sum(row.count(0) for row in orig_grid))
     if sum(row.count(0) for row in orig_grid) == 0:
-        break
+        #break
+        print("full")
+        backtrack(all_moves, orig_grid)
     ii+=1
     
     move = find_easy(orig_grid)
@@ -302,6 +313,7 @@ while not sudokuCheck(orig_grid) :
         move=None
         continue
     
+    '''
     move = find_only_possible_space(orig_grid)
     
     if move :
@@ -311,8 +323,13 @@ while not sudokuCheck(orig_grid) :
         
         move=None
         continue
-    
-    
+    '''
+    move = find_least_possibilities(orig_grid)
+    if move:
+        if len(move[2])==1:
+            orig_grid[move[0]][move[1]] = move[2][0]
+            all_moves.append(('m',(move[0],move[1],move[2][0])))
+
     #move = find_least_possibilities(orig_grid)
     
     
@@ -320,16 +337,14 @@ while not sudokuCheck(orig_grid) :
     
     if moves:
         #move = moves[0]
-        while len(moves[0][2]) ==0:
-            moves.pop(0)
         
         
-        m =  moves[0][2].pop()
+        moves[0]
         
         
         
         
-        orig_grid[moves[0][0]][moves[0][1]] = m
+        orig_grid[moves[0][0]][moves[0][1]] = moves[0][2]
         
         all_moves.append(('c',moves))
         move=None
