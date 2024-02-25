@@ -88,110 +88,7 @@ def find_easy(grid):
                 
     return None
 #grid[row_i][col_i]                    
-def find_only_possible_space(grid):  
-    goal = set(range(1,10))
-    #grid = orig_grid.copy()  """
-    for row_i in range(9):
-        if 0 not in grid[row_i]:
-            continue
-        missing_nums = list(goal -set(grid[row_i]))
-        
-        
-        for col_i in range(9):
-            
-            if grid[row_i][col_i] !=0:
-                continue
-            column = [grid[i][col_i] for i in range(len(grid))]
-            subgrid_row_start = 3 * (row_i // 3)
-            subgrid_col_start = 3 * (col_i // 3)
-            sub_grid = [
-                grid[i][subgrid_col_start:subgrid_col_start + 3]
-                for i in range(subgrid_row_start, subgrid_row_start + 3)
-            ]
-            flat_sub_grid = [value for row in sub_grid for value in row]
-            
-            possibles = []
-            for ii in missing_nums:
-                if ( ii not in column) and ( ii not in flat_sub_grid):
-                    possibles.append(ii)
-            
-            if len(possibles) == 1:
-                #grid[row_i][col_i]=possibles[0]
-                #print("found0",row_i,col_i,possibles[0])
-                found=True
-                return (row_i,col_i,possibles[0])
-             
-    
-       
-    
-    for col_i in range(9):
-        column = [grid[i][col_i] for i in range(len(grid))]
-        if 0 not in column:
-            continue
-        missing_nums = list(goal- set(column) )
-        
-        
-        for row_i in range(9):
-            if grid[row_i][col_i] !=0:
-                continue
-            subgrid_row_start = 3 * (row_i // 3)
-            subgrid_col_start = 3 * (col_i // 3)
-            sub_grid = [
-                grid[i][subgrid_col_start:subgrid_col_start + 3]
-                for i in range(subgrid_row_start, subgrid_row_start + 3)
-            ]
-            flat_sub_grid = [value for row in sub_grid for value in row]
-            
-            possibles = []
-            for ii in missing_nums:
-                if ( ii not in grid[row_i]) and ( ii not in flat_sub_grid):
-                    possibles.append(ii)
-            
-            if len(possibles) == 1:
-                #grid[row_i][col_i]=possibles[0]
-                #print("found1",row_i,col_i,possibles[0])
-                found=True
-                return (row_i,col_i,possibles[0])
-            
-            
-    for ii,kk in np.ndindex((3,2)):
-    
-        subgrid_row_start = 3 * ii
-        subgrid_col_start = 3 * kk
-        sub_grid = [
-            grid[i][subgrid_col_start:subgrid_col_start + 3]
-            for i in range(subgrid_row_start, subgrid_row_start + 3)
-        ]
-        flat_sub_grid = [value for row in sub_grid for value in row]
-        
-        if 0 not in flat_sub_grid:
-            continue
-        missing_nums = list(goal- set(flat_sub_grid) )
-        
-            
-            
-        for row_i in range(subgrid_row_start,subgrid_row_start+3):
-            for col_i in range(subgrid_row_start,subgrid_row_start+3):
-                
-                if grid[row_i][col_i] !=0:
-                    continue
-                column = [grid[i][col_i] for i in range(len(grid))]
-                
-                
-                possibles = []
-                for jj in missing_nums:
-                    if ( jj not in column) and ( jj not in grid[row_i]):
-                        possibles.append(jj)
-                
-                if len(possibles) == 1:
-                    #grid[row_i][col_i]=possibles[0]
-                    #print("found2",row_i,col_i,possibles[0])
-                    found=True
-                    return (row_i,col_i,possibles[0])
-                 
-              
-    return None    
-        
+
 
 
 
@@ -313,17 +210,8 @@ while not sudokuCheck(orig_grid) :
         move=None
         continue
     
-    '''
-    move = find_only_possible_space(orig_grid)
     
-    if move :
-        orig_grid[move[0]][move[1]] = move[2]
     
-        all_moves.append(('m',move))
-        
-        move=None
-        continue
-    '''
     move = find_least_possibilities(orig_grid)
     if move:
         if len(move[2])==1:
