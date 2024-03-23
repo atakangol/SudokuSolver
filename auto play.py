@@ -10,6 +10,7 @@ import sys
 import numpy as np
 from sudoku import Sudoku
 import pandas as pd
+import time
 
 
 def small_check(current_grid, entered_cell):
@@ -163,6 +164,22 @@ def find_least_possibilities(grid):
 
   return best_candidate      
 
+def find_all_ordered_by_possibilities(grid):
+    empty_spaces = []
+
+    for i in range(9):
+        for j in range(9):
+            if grid[i][j] == 0:
+                possibilities = find_possibilities(grid, i, j)
+                if len(possibilities) == 0: return []
+                for possibility in possibilities:
+                    empty_spaces.append((i, j, possibility))
+
+    # Sort the empty spaces based on the number of possibilities
+    empty_spaces.sort(key=lambda x: len(find_possibilities(grid, x[0], x[1])))
+
+    return empty_spaces
+
 # Initialize Pygame
 pygame.init()
 
@@ -188,7 +205,7 @@ pygame.display.set_caption("Sudoku Game")
 
 
 
-puzzle = Sudoku(3).difficulty(0.7)
+puzzle = Sudoku(3).difficulty(.9)
 orig_grid = [[0 if element is None else element for element in row] for row in puzzle.board]
 
 grid = [row.copy() for row in orig_grid]
@@ -207,66 +224,112 @@ error_pos = None
 while True:
     if sudokuCheck(grid):
         break
+    '''
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
     
     
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if True : #event.type == pygame.MOUSEBUTTONDOWN:
             
             #autoplay
+            #print(all_moves)
+    '''  
+    move = find_easy(grid)
+    if move :
+        grid[move[0]][move[1]] = move[2]
+    
+        all_moves.append({'type':'m',
+         'move':move,
+         'possiblities':None
+            })
+        
+        
+        validation_error = small_check(grid,(move[0],move[1])) == 0
+        #print(validation_error)
+        # Update the grid with the entered number
+        if validation_error: error_pos=(move[0],move[1])
+        
+        row,col = move[0:2]
+        move=None
+        #print("easy")
+    else:
+        
+        move = find_least_possibilities(grid)
+        if move:
+            if len(move[2])==1:
+                #print(move)
+                grid[move[0]][move[1]] = move[2][0]
             
-            move = find_easy(grid)
-            if move :
-                grid[move[0]][move[1]] = move[2]
-            
-                all_moves.append(('m',move))
-                
+                #all_moves.append(('m',move))
+                #orig_grid[move[0]][move[1]] = move[2][0]
+                all_moves.append({'type':'m',
+                 'move':(move[0],move[1],move[2][0]),
+                 'possiblities':None
+                    }
+                                 )
                 
                 validation_error = small_check(grid,(move[0],move[1])) == 0
-                print(validation_error)
+                #print(validation_error)
                 # Update the grid with the entered number
                 if validation_error: error_pos=(move[0],move[1])
                 
                 row,col = move[0:2]
                 move=None
-                print("easy")
             else:
-                
-                move = find_least_possibilities(grid)
-                if move:
-                    if len(move[2])==1:
-                        print(move)
-                        grid[move[0]][move[1]] = move[2][0]
+                moves = find_all_ordered_by_possibilities(grid)
+                if moves:
+                    move = moves.pop(0)
+                    print(move)
+                    grid[move[0]][move[1]] = move[2]
                     
-                        #all_moves.append(('m',move))
-                        #orig_grid[move[0]][move[1]] = move[2][0]
-                        all_moves.append(('m',(move[0],move[1],move[2][0])))
-                        
-                        validation_error = small_check(grid,(move[0],move[1])) == 0
-                        print(validation_error)
-                        # Update the grid with the entered number
-                        if validation_error: error_pos=(move[0],move[1])
-                        
-                        row,col = move[0:2]
-                        move=None
+                    all_moves.append(
+                        {'type':'c',
+                         'move':move,
+                         'possiblities':moves
+                            }
+                         )
+                    validation_error = small_check(grid,(move[0],move[1])) == 0
+            
+                    if validation_error: error_pos=(move[0],move[1])
+                    
+                    row,col = move[0:2]
+                    move=None
                 else:
-                    moves = find_all_ordered_by_possibilities(orig_grid)
-                    if moves
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+                    #backtrack
+                    print('backtrack')
+                    
+                    back_move = (None,None)
+                    while len(all_moves)>0:
+                        print(all_moves[-1])
+                        back_move = all_moves.pop(-1)
+                        if back_move['type']=='m':
+                            move = back_move['move']
+                            grid[move[0]][move[1]] = 0
+                        else:
+                            move = back_move['move']
+                            grid[move[0]][move[1]] = 0
+                            
+                            possibilities = back_move['possiblities']
+                            if len(possibilities) > 0:
+                                new_move = possibilities.pop(0)
+                                
+                                grid[new_move[0]][new_move[1]] = new_move[2]
+                
+                
+                                all_moves.append(
+                                    {'type':'c',
+                                     'move':new_move,
+                                     'possiblities':possibilities
+                                        }
+                                     )
+                                break
+                            else:
+                                pass
+            
+    
+            
         
         
         
@@ -330,10 +393,9 @@ while True:
 
         # Set the frame rate
         pygame.time.Clock().tick(60)
-   
-   
-   
-    
+        
+        #print(all_moves)
+        time.sleep(0.1)
     
     
     
